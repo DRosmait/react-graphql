@@ -5,27 +5,53 @@ import './App.css';
 const axionGitHupGraphQL = axios.create({
     baseURL: 'https://api.github.com/graphql',
     headers: {
-        Autorization: process.env.REACT_APP_GITHUP_PERSONAL_ACCESS_TOKEN,
-    }
+        Authorization: `token ${
+            process.env.REACT_APP_GITHUP_PERSONAL_ACCESS_TOKEN
+        }`,
+    },
 });
+
+const GET_ORGANIZATION = `
+    {
+        organization(login: "the-road-to-learn-react") {
+            name
+            url
+        }
+    }
+`;
 
 const TITLE = 'React GraphQL GitHub Client';
 
 export default class App extends React.Component {
     state = {
         path: 'road-to-learn-react',
+        organization: null,
+        errors: null,
     }
 
-    onSubmit = () => { /* fetch data */ }
+    onSubmit = e => {
+        e.preventDefault();
+        this.onFetchFromGithub();
+    }
 
     onChange = e => this.setState({ path: e.target.value })
 
     componentDidMount() {
-        /* fetch data */
+        this.onFetchFromGithub();
+    }
+
+    onFetchFromGithub() {
+        axionGitHupGraphQL
+            .post('', { query: GET_ORGANIZATION })
+            .then(result => this.setState({
+                organization: result.data.data.organization,
+                errors: result.data.data.errors,
+            }))
+            .catch(console.error);
     }
 
     render() {
-        const { path } = this.state;
+        const { path, organization, errors } = this.state;
 
         return (
             <div>
@@ -47,8 +73,19 @@ export default class App extends React.Component {
 
                 <hr/>
 
-                {/* Here comes the result! */}
+                <Organization organization={organization} />
             </div>
         )
     }
+}
+
+const Organization = ({ organization }) => {
+    return organization ? (
+        <div>
+            <p>
+                <strong>Issue from organization:</strong>
+                <a href={organization.url} >{organization.name}</a>
+            </p>
+        </div>
+    ) : null;
 }
