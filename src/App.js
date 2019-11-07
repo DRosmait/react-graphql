@@ -11,11 +11,24 @@ const axionGitHupGraphQL = axios.create({
     },
 });
 
-const GET_ORGANIZATION = `
+const GET_ISSUES_OF_REPOSITORY = `
     {
         organization(login: "the-road-to-learn-react") {
             name
             url
+            repository(name: "the-road-to-learn-react") {
+                name
+                url
+                issues(last: 5) {
+                    edges {
+                        node {
+                            id
+                            title
+                            url
+                        }
+                    }
+                }
+            }
         }
     }
 `;
@@ -42,7 +55,7 @@ export default class App extends React.Component {
 
     onFetchFromGithub() {
         axionGitHupGraphQL
-            .post('', { query: GET_ORGANIZATION })
+            .post('', { query: GET_ISSUES_OF_REPOSITORY })
             .then(result => this.setState({
                 organization: result.data.data.organization,
                 errors: result.data.data.errors,
@@ -73,19 +86,52 @@ export default class App extends React.Component {
 
                 <hr/>
 
-                <Organization organization={organization} />
+                <Organization organization={organization} errors={errors} />
             </div>
         )
     }
 }
 
-const Organization = ({ organization }) => {
+const Organization = ({ organization, errors }) => {
+    if (errors) {
+        return (
+            <p>
+                <strong>Something went wrong:</strong>
+                { errors.map(err => err.message).join(' ') }
+            </p>
+        )
+    }
+
     return organization ? (
         <div>
             <p>
                 <strong>Issue from organization:</strong>
                 <a href={organization.url} >{organization.name}</a>
             </p>
+            <Repository repository={organization.repository}/>
         </div>
-    ) : null;
+    ) : (
+        <p>No information yet...</p>
+    );
+};
+
+const Repository = ({ repository }) => {
+    return (
+        <div>
+            <p>
+                <strong>In Repository</strong>
+                <a href={repository.url}>{repository.name}</a>
+            </p>‚
+
+            <ul>
+                {
+                    repository.issues.edges.map(issue => (
+                        <li key={issue.node.id}>
+                            <a href={issue.node.url}>{issue.node.title}</a>
+                        </li>
+                    ))
+                }
+            </ul>
+        </div>
+    )
 }
